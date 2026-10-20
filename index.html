@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Machining Calculator · Metric ⇄ Imperial</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d2026'/%3E%3Cg fill='%23f2a33a' transform='translate(32 32)'%3E%3Ccircle r='17'/%3E%3Crect x='-5' y='-26' width='10' height='12' rx='2'/%3E%3Crect x='-5' y='-26' width='10' height='12' rx='2' transform='rotate(45)'/%3E%3Crect x='-5' y='-26' width='10' height='12' rx='2' transform='rotate(90)'/%3E%3Crect x='-5' y='-26' width='10' height='12' rx='2' transform='rotate(135)'/%3E%3Crect x='-5' y='-26' width='10' height='12' rx='2' transform='rotate(180)'/%3E%3Crect x='-5' y='-26' width='10' height='12' rx='2' transform='rotate(225)'/%3E%3Crect x='-5' y='-26' width='10' height='12' rx='2' transform='rotate(270)'/%3E%3Crect x='-5' y='-26' width='10' height='12' rx='2' transform='rotate(315)'/%3E%3C/g%3E%3Ccircle cx='32' cy='32' r='7.5' fill='%231d2026'/%3E%3C/svg%3E">
+<!-- PWA: makes the page installable and usable offline -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14161a">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Machining Calc">
+<style>
+  :root { --bg:#14161a; --panel:#1d2026; --line:#2c313a; --text:#e8e6e1; --dim:#8b909a; --accent:#f2a33a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI",system-ui,sans-serif; padding:28px 18px; padding-top:max(28px, env(safe-area-inset-top)); }
+  .wrap { max-width:680px; margin:0 auto; }
+  h1 { font-size:22px; letter-spacing:.04em; margin:0 0 4px; }
+  h1 span { color:var(--accent); }
+  .sub { color:var(--dim); font-size:13px; margin-bottom:22px; font-family:Consolas,monospace; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:16px; }
+  .card.calc-card { border-color:#4a3a22; }
+  .card h2 { font-size:12px; text-transform:uppercase; letter-spacing:.12em; color:var(--dim); margin:0 0 14px; font-weight:600; display:flex; justify-content:space-between; gap:10px; }
+  .card h2 em { font-style:normal; color:#5d636e; letter-spacing:.04em; text-transform:none; font-family:Consolas,monospace; font-weight:normal; }
+  .row { display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:end; }
+  .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  label { display:block; font-size:12px; color:var(--dim); margin-bottom:6px; }
+  input, select { width:100%; background:#0f1114; border:1px solid var(--line); color:var(--text); border-radius:6px; padding:11px 12px; font-size:20px; font-family:Consolas,monospace; }
+  select { font-size:14px; padding:0 8px; }
+  input:focus, select:focus { outline:none; border-color:var(--accent); }
+  .swap { color:var(--accent); font-size:22px; padding-bottom:10px; width:22px; text-align:center; }
+  .unit-in { display:grid; grid-template-columns:1fr 92px; gap:6px; }
+  .divider { border:0; border-top:1px dashed var(--line); margin:16px 0; }
+  .out { background:#0f1114; border:1px solid var(--line); border-radius:6px; padding:11px 12px; font-family:Consolas,monospace; font-size:20px; color:var(--accent); min-height:48px; }
+  .out small { font-size:12px; color:var(--dim); }
+  .note { color:var(--dim); font-size:12px; line-height:1.6; margin:12px 0 0; }
+  .note code { color:var(--text); }
+  table { width:100%; border-collapse:collapse; font-family:Consolas,monospace; font-size:14px; }
+  th, td { text-align:right; padding:6px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--dim); font-weight:normal; font-size:12px; }
+  td:first-child, th:first-child { text-align:left; }
+  .tabs { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+  .tabs button { background:#0f1114; border:1px solid var(--line); color:var(--dim); border-radius:6px; padding:6px 12px; font-size:12px; cursor:pointer; font-family:inherit; }
+  .tabs button.on { border-color:var(--accent); color:var(--accent); }
+  @media (max-width:560px){ .row3 { grid-template-columns:1fr; } .unit-in { grid-template-columns:1fr 84px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Machining <span>·</span> Metric <span>⇄</span> Imperial</h1>
+  <div class="sub">Each converter stands on its own. The RPM card at the bottom is a separate calculator.</div>
+
+  <div class="card">
+    <h2>Surface speed <em>SFM = SMM × 3.28084</em></h2>
+    <div class="row">
+      <div><label for="smm">SMM (m/min)</label><input id="smm" type="number" step="any" inputmode="decimal"></div>
+      <div class="swap">⇄</div>
+      <div><label for="sfm">SFM (ft/min)</label><input id="sfm" type="number" step="any" inputmode="decimal"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Feed per minute <em>IPM = mm/min ÷ 25.4</em></h2>
+    <div class="row">
+      <div><label for="mmm">mm/min</label><input id="mmm" type="number" step="any" inputmode="decimal"></div>
+      <div class="swap">⇄</div>
+      <div><label for="ipm">in/min (IPM)</label><input id="ipm" type="number" step="any" inputmode="decimal"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Feed per revolution <em>IPR = mm/rev ÷ 25.4</em></h2>
+    <div class="row">
+      <div><label for="mmr">mm/rev</label><input id="mmr" type="number" step="any" inputmode="decimal"></div>
+      <div class="swap">⇄</div>
+      <div><label for="ipr">in/rev (IPR)</label><input id="ipr" type="number" step="any" inputmode="decimal"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Diameter <em>1 in = 25.4 mm</em></h2>
+    <div class="row">
+      <div><label for="dmm">mm</label><input id="dmm" type="number" step="any" inputmode="decimal"></div>
+      <div class="swap">⇄</div>
+      <div><label for="din">inch</label><input id="din" type="number" step="any" inputmode="decimal"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Torque <em>1 N·m = 0.737562 ft·lb = 8.85075 in·lb</em></h2>
+    <div class="row3">
+      <div><label for="tnm">N·m</label><input id="tnm" type="number" step="any" inputmode="decimal"></div>
+      <div><label for="tft">ft·lb</label><input id="tft" type="number" step="any" inputmode="decimal"></div>
+      <div><label for="tin">in·lb</label><input id="tin" type="number" step="any" inputmode="decimal"></div>
+    </div>
+  </div>
+
+  <div class="card calc-card">
+    <h2>Spindle speed &amp; feed <em>RPM = (SMM × 1000) / (π × D)</em></h2>
+    <div class="row3">
+      <div><label for="cs">Surface speed</label>
+        <div class="unit-in"><input id="cs" type="number" step="any" inputmode="decimal" value="200">
+          <select id="csu"><option value="smm">SMM</option><option value="sfm">SFM</option></select></div></div>
+      <div><label for="cd">Diameter</label>
+        <div class="unit-in"><input id="cd" type="number" step="any" inputmode="decimal" value="12">
+          <select id="cdu"><option value="mm">mm</option><option value="in">in</option></select></div></div>
+      <div><label for="cf">Feed per rev</label>
+        <div class="unit-in"><input id="cf" type="number" step="any" inputmode="decimal" value="0.15">
+          <select id="cfu"><option value="mm">mm/rev</option><option value="in">in/rev</option></select></div></div>
+    </div>
+    <hr class="divider">
+    <div class="row3">
+      <div><label>Spindle speed</label><div class="out" id="o_rpm">—</div></div>
+      <div><label>Feed (metric)</label><div class="out" id="o_mmm">—</div></div>
+      <div><label>Feed (imperial)</label><div class="out" id="o_ipm">—</div></div>
+    </div>
+    <p class="note">Mix units however you like. <code>Feed/min = Feed/rev × RPM</code>. Use the cutter diameter for milling and drilling, or the part diameter for turning.</p>
+  </div>
+
+  <div class="card">
+    <h2>Quick reference</h2>
+    <div class="tabs">
+      <button data-t="speed" class="on">Surface speed</button>
+      <button data-t="fpm">Feed / min</button>
+      <button data-t="fpr">Feed / rev</button>
+      <button data-t="torque">Torque</button>
+    </div>
+    <table id="ref"><thead></thead><tbody></tbody></table>
+  </div>
+</div>
+
+<script>
+  const FT = 3.28084, IN = 25.4;
+  const $ = id => document.getElementById(id);
+  const fmt = (n, d) => isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits:d }) : "—";
+  const clean = (n, d) => isFinite(n) ? String(+n.toFixed(d)) : "";
+
+  // Independent converters: [metric id, imperial id, metric→imperial factor, metric decimals, imperial decimals]
+  const pairs = [
+    ["smm", "sfm", FT,     1, 1],
+    ["mmm", "ipm", 1/IN,   1, 2],
+    ["mmr", "ipr", 1/IN,   3, 4],
+    ["dmm", "din", 1/IN,   3, 4],
+  ];
+  for (const [a, b, k, da, db] of pairs) {
+    $(a).addEventListener("input", () => { const v = parseFloat($(a).value); $(b).value = clean(v * k, db); });
+    $(b).addEventListener("input", () => { const v = parseFloat($(b).value); $(a).value = clean(v / k, da); });
+  }
+
+  // Torque (three-way): factors relative to N·m
+  const NM_FT = 0.737562149, NM_IN = 8.850745792;
+  const torque = { tnm:[1,2], tft:[NM_FT,2], tin:[NM_IN,1] };
+  for (const id in torque) {
+    $(id).addEventListener("input", () => {
+      const nm = parseFloat($(id).value) / torque[id][0];
+      for (const o in torque) if (o !== id) $(o).value = clean(nm * torque[o][0], torque[o][1]);
+    });
+  }
+
+  // Spindle & feed calculator (self-contained)
+  function calc(){
+    const s = parseFloat($("cs").value), d = parseFloat($("cd").value), f = parseFloat($("cf").value);
+    const smm = $("csu").value === "sfm" ? s / FT : s;
+    const dmm = $("cdu").value === "in"  ? d * IN : d;
+    const mmr = $("cfu").value === "in"  ? f * IN : f;
+    const rpm = smm > 0 && dmm > 0 ? smm * 1000 / (Math.PI * dmm) : NaN;
+    const mmm = mmr > 0 ? mmr * rpm : NaN;
+    $("o_rpm").innerHTML = isFinite(rpm) ? fmt(rpm, 0) + " <small>rpm</small>" : "—";
+    $("o_mmm").innerHTML = isFinite(mmm) ? fmt(mmm, 1) + " <small>mm/min</small>" : "—";
+    $("o_ipm").innerHTML = isFinite(mmm) ? fmt(mmm / IN, 2) + " <small>in/min</small>" : "—";
+  }
+  ["cs","cd","cf"].forEach(id => $(id).addEventListener("input", calc));
+  ["csu","cdu","cfu"].forEach(id => $(id).addEventListener("change", calc));
+
+  // Quick reference
+  const refs = {
+    speed: { h:["SMM","SFM","SFM","SMM"], a:[25,50,75,100,150,200,250,300,400,500,750,1000], b:[100,200,300,400,500,600,800,1000,1200,1500,2000,3000], f:x=>x*FT, g:x=>x/FT, d:[1,1] },
+    fpm:   { h:["mm/min","in/min","in/min","mm/min"], a:[50,100,200,300,500,750,1000,1500,2000,3000,5000,10000], b:[1,2,5,10,15,20,30,50,75,100,150,200], f:x=>x/IN, g:x=>x*IN, d:[2,1] },
+    fpr:   { h:["mm/rev","in/rev","in/rev","mm/rev"], a:[0.02,0.05,0.08,0.1,0.15,0.2,0.25,0.3,0.4,0.5,0.75,1.0], b:[0.001,0.002,0.003,0.004,0.005,0.006,0.008,0.010,0.012,0.015,0.020,0.030], f:x=>x/IN, g:x=>x*IN, d:[4,3] },
+  };
+  function showRef(t){
+    if (t === "torque") {
+      const nm = [1,2,5,10,15,20,25,30,40,50,75,100];
+      $("ref").querySelector("thead").innerHTML = "<tr><th>N·m</th><th>ft·lb</th><th>in·lb</th></tr>";
+      $("ref").querySelector("tbody").innerHTML = nm.map(n =>
+        `<tr><td>${n}</td><td>${fmt(n*NM_FT,2)}</td><td>${fmt(n*NM_IN,1)}</td></tr>`).join("");
+      document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+      return;
+    }
+    const r = refs[t];
+    $("ref").querySelector("thead").innerHTML = "<tr>" + r.h.map(x => `<th>${x}</th>`).join("") + "</tr>";
+    $("ref").querySelector("tbody").innerHTML = r.a.map((m, i) =>
+      `<tr><td>${m}</td><td>${fmt(r.f(m), r.d[0])}</td><td>${r.b[i]}</td><td>${fmt(r.g(r.b[i]), r.d[1])}</td></tr>`).join("");
+    document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+  }
+  document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => showRef(b.dataset.t));
+
+  calc(); showRef("speed");
+
+  // PWA: register the service worker (only works when served over https or localhost)
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
+</script>
+</body>
+</html>
