@@ -1,7 +1,7 @@
 {
-  "name": "Machining Calculator · Metric ⇄ Imperial",
-  "short_name": "Machining Calc",
-  "description": "Surface speed, feed, diameter and torque converters plus a spindle speed & feed calculator. Works offline.",
+  "name": "MetriFlip · Metric ⇄ Imperial",
+  "short_name": "MetriFlip",
+  "description": "Metric ⇄ imperial shop conversions (surface speed, feeds, size, surface roughness, torque) plus a spindle speed & feed calculator. Works offline.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -10,8 +10,23 @@
   "background_color": "#14161a",
   "theme_color": "#14161a",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
