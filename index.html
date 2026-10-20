@@ -81,11 +81,20 @@
   </div>
 
   <div class="card">
-    <h2>Diameter <em>1 in = 25.4 mm</em></h2>
+    <h2>Size <em>1 in = 25.4 mm</em></h2>
     <div class="row">
       <div><label for="dmm">mm</label><input id="dmm" type="number" step="any" inputmode="decimal"></div>
       <div class="swap">⇄</div>
       <div><label for="din">inch</label><input id="din" type="number" step="any" inputmode="decimal"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Surface roughness <em>1 µm = 39.3701 µin</em></h2>
+    <div class="row">
+      <div><label for="raum">Ra µm</label><input id="raum" type="number" step="any" inputmode="decimal"></div>
+      <div class="swap">⇄</div>
+      <div><label for="rauin">Ra µin</label><input id="rauin" type="number" step="any" inputmode="decimal"></div>
     </div>
   </div>
 
@@ -127,6 +136,7 @@
       <button data-t="fpm">Feed / min</button>
       <button data-t="fpr">Feed / rev</button>
       <button data-t="torque">Torque</button>
+      <button data-t="ra">Roughness</button>
     </div>
     <table id="ref"><thead></thead><tbody></tbody></table>
   </div>
@@ -144,6 +154,7 @@
     ["mmm", "ipm", 1/IN,   1, 2],
     ["mmr", "ipr", 1/IN,   3, 4],
     ["dmm", "din", 1/IN,   3, 4],
+    ["raum","rauin", 1000/IN, 3, 1],
   ];
   for (const [a, b, k, da, db] of pairs) {
     $(a).addEventListener("input", () => { const v = parseFloat($(a).value); $(b).value = clean(v * k, db); });
@@ -182,6 +193,14 @@
     fpr:   { h:["mm/rev","in/rev","in/rev","mm/rev"], a:[0.02,0.05,0.08,0.1,0.15,0.2,0.25,0.3,0.4,0.5,0.75,1.0], b:[0.001,0.002,0.003,0.004,0.005,0.006,0.008,0.010,0.012,0.015,0.020,0.030], f:x=>x/IN, g:x=>x*IN, d:[4,3] },
   };
   function showRef(t){
+    if (t === "ra") {
+      const g = [["N3",0.1,4],["N4",0.2,8],["N5",0.4,16],["N6",0.8,32],["N7",1.6,63],["N8",3.2,125],["N9",6.3,250],["N10",12.5,500],["N11",25,1000],["N12",50,2000]];
+      $("ref").querySelector("thead").innerHTML = "<tr><th>Grade</th><th>Ra µm</th><th>Ra µin (exact)</th><th>Ra µin (callout)</th></tr>";
+      $("ref").querySelector("tbody").innerHTML = g.map(([n,u,c]) =>
+        `<tr><td>${n}</td><td>${u}</td><td>${fmt(u*1000/IN,1)}</td><td>${c}</td></tr>`).join("");
+      document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+      return;
+    }
     if (t === "torque") {
       const nm = [1,2,5,10,15,20,25,30,40,50,75,100];
       $("ref").querySelector("thead").innerHTML = "<tr><th>N·m</th><th>ft·lb</th><th>in·lb</th></tr>";
