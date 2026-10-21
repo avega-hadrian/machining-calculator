@@ -27,6 +27,11 @@
   .card h2 em { font-style:normal; color:#5d636e; letter-spacing:.04em; text-transform:none; font-family:Consolas,monospace; font-weight:normal; }
   .row { display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:end; }
   .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .row2 + .row2 { margin-top:12px; }
+  .row.hinted + .row.hinted { margin-top:14px; }
+  .row.hinted .swap { padding-bottom:32px; }
+  .hint { font-size:12px; color:var(--dim); font-family:Consolas,monospace; margin-top:6px; min-height:16px; }
   label { display:block; font-size:12px; color:var(--dim); margin-bottom:6px; }
   input, select { width:100%; background:#0f1114; border:1px solid var(--line); color:var(--text); border-radius:6px; padding:11px 12px; font-size:20px; font-family:Consolas,monospace; }
   select { font-size:14px; padding:0 8px; }
@@ -46,12 +51,14 @@
   .tabs button { background:#0f1114; border:1px solid var(--line); color:var(--dim); border-radius:6px; padding:6px 12px; font-size:12px; cursor:pointer; font-family:inherit; }
   .tabs button.on { border-color:var(--accent); color:var(--accent); }
   @media (max-width:560px){ .row3 { grid-template-columns:1fr; } .unit-in { grid-template-columns:1fr 84px; } }
+  @media (max-width:420px){ .row2 { grid-template-columns:1fr; } }
+  @media (max-width:560px){ .row.hinted { grid-template-columns:1fr; gap:4px; } .row.hinted .swap { padding:0; justify-self:center; transform:rotate(90deg); } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Metri<span>Flip</span> <span>·</span> Metric <span>⇄</span> Imperial</h1>
-  <div class="sub">Each converter stands on its own. The RPM card at the bottom is a separate calculator.</div>
+  <div class="sub">Speeds, feeds, sizes and finishes. Any unit, both ways.</div>
 
   <div class="card">
     <h2>Surface speed <em>SFM = SMM × 3.28084</em></h2>
@@ -108,25 +115,35 @@
   </div>
 
   <div class="card calc-card">
-    <h2>Spindle speed &amp; feed <em>RPM = (SMM × 1000) / (π × D)</em></h2>
-    <div class="row3">
-      <div><label for="cs">Surface speed</label>
-        <div class="unit-in"><input id="cs" type="number" step="any" inputmode="decimal" value="200">
-          <select id="csu"><option value="smm">SMM</option><option value="sfm">SFM</option></select></div></div>
-      <div><label for="cd">Diameter</label>
-        <div class="unit-in"><input id="cd" type="number" step="any" inputmode="decimal" value="12">
+    <h2>Spindle speed &amp; feed <em>Feed = RPM × Z × chipload</em></h2>
+    <div class="row2">
+      <div><label for="cd">Cutter diameter</label>
+        <div class="unit-in"><input id="cd" type="number" step="any" inputmode="decimal">
           <select id="cdu"><option value="mm">mm</option><option value="in">in</option></select></div></div>
-      <div><label for="cf">Feed per rev</label>
-        <div class="unit-in"><input id="cf" type="number" step="any" inputmode="decimal" value="0.15">
-          <select id="cfu"><option value="mm">mm/rev</option><option value="in">in/rev</option></select></div></div>
+      <div><label for="cz">Flutes (Z)</label><input id="cz" type="number" step="1" min="1" inputmode="numeric"></div>
     </div>
     <hr class="divider">
-    <div class="row3">
-      <div><label>Spindle speed</label><div class="out" id="o_rpm">—</div></div>
-      <div><label>Feed (metric)</label><div class="out" id="o_mmm">—</div></div>
-      <div><label>Feed (imperial)</label><div class="out" id="o_ipm">—</div></div>
+    <div class="row hinted">
+      <div><label for="cs">Surface speed</label>
+        <div class="unit-in"><input id="cs" type="number" step="any" inputmode="decimal">
+          <select id="csu"><option value="smm">SMM</option><option value="sfm">SFM</option></select></div>
+        <div class="hint" id="h_cs"></div></div>
+      <div class="swap">⇄</div>
+      <div><label for="cr">Spindle speed (rpm)</label><input id="cr" type="number" step="any" inputmode="decimal">
+        <div class="hint" id="h_cr"></div></div>
     </div>
-    <p class="note">Mix units however you like. <code>Feed/min = Feed/rev × RPM</code>. Use the cutter diameter for milling and drilling, or the part diameter for turning.</p>
+    <div class="row hinted">
+      <div><label for="cf">Chipload (per tooth)</label>
+        <div class="unit-in"><input id="cf" type="number" step="any" inputmode="decimal">
+          <select id="cfu"><option value="mm">mm/z</option><option value="in">in/z</option></select></div>
+        <div class="hint" id="h_cf"></div></div>
+      <div class="swap">⇄</div>
+      <div><label for="cm">Feed rate</label>
+        <div class="unit-in"><input id="cm" type="number" step="any" inputmode="decimal">
+          <select id="cmu"><option value="mm">mm/min</option><option value="in">in/min</option></select></div>
+        <div class="hint" id="h_cm"></div></div>
+    </div>
+    <p class="note">Works both ways: type on either side of an ⇄ and the other side updates. If you change the diameter or flutes, the value you typed last stays and the other one is recalculated. Use the cutter diameter for milling and drilling, or the part diameter for turning.</p>
   </div>
 
   <div class="card">
@@ -171,20 +188,46 @@
     });
   }
 
-  // Spindle & feed calculator (self-contained)
-  function calc(){
-    const s = parseFloat($("cs").value), d = parseFloat($("cd").value), f = parseFloat($("cf").value);
-    const smm = $("csu").value === "sfm" ? s / FT : s;
-    const dmm = $("cdu").value === "in"  ? d * IN : d;
-    const mmr = $("cfu").value === "in"  ? f * IN : f;
-    const rpm = smm > 0 && dmm > 0 ? smm * 1000 / (Math.PI * dmm) : NaN;
-    const mmm = mmr > 0 ? mmr * rpm : NaN;
-    $("o_rpm").innerHTML = isFinite(rpm) ? fmt(rpm, 0) + " <small>rpm</small>" : "—";
-    $("o_mmm").innerHTML = isFinite(mmm) ? fmt(mmm, 1) + " <small>mm/min</small>" : "—";
-    $("o_ipm").innerHTML = isFinite(mmm) ? fmt(mmm / IN, 2) + " <small>in/min</small>" : "—";
+  // Spindle & feed calculator (two-way, self-contained). Everything is held in metric.
+  // sp / fd remember which side of each pair was typed last, so it stays fixed when other values change.
+  const S = { dmm:12, z:4, smm:200, rpm:NaN, fz:0.0375, mmm:NaN, sp:"smm", fd:"fz" };
+  const num = id => parseFloat($(id).value);
+  const isIn = id => $(id).value === "in";
+  function solve(){
+    const ok = S.dmm > 0;
+    if (S.sp === "smm") S.rpm = ok && S.smm > 0 ? S.smm * 1000 / (Math.PI * S.dmm) : NaN;
+    else                S.smm = ok && S.rpm > 0 ? Math.PI * S.dmm * S.rpm / 1000 : NaN;
+    const ready = S.z > 0 && S.rpm > 0;
+    if (S.fd === "fz") S.mmm = ready && S.fz > 0  ? S.fz * S.z * S.rpm : NaN;
+    else               S.fz  = ready && S.mmm > 0 ? S.mmm / (S.z * S.rpm) : NaN;
   }
-  ["cs","cd","cf"].forEach(id => $(id).addEventListener("input", calc));
-  ["csu","cdu","cfu"].forEach(id => $(id).addEventListener("change", calc));
+  function show(skip){
+    const put = (id, v, d) => { if (id !== skip) $(id).value = clean(v, d); };
+    const sfm = $("csu").value === "sfm", fin = isIn("cfu"), min = isIn("cmu");
+    put("cd", isIn("cdu") ? S.dmm / IN : S.dmm, isIn("cdu") ? 4 : 3);
+    put("cs", sfm ? S.smm * FT : S.smm, 1);
+    put("cr", S.rpm, 0);
+    put("cf", fin ? S.fz / IN : S.fz, fin ? 5 : 4);
+    put("cm", min ? S.mmm / IN : S.mmm, min ? 2 : 1);
+    const fpr = S.mmm / S.rpm;
+    $("h_cs").textContent = isFinite(S.smm) ? "= " + (sfm ? fmt(S.smm, 1) + " SMM" : fmt(S.smm * FT, 1) + " SFM") : "";
+    $("h_cr").textContent = isFinite(fpr)   ? "feed/rev " + fmt(fpr, 3) + " mm · " + fmt(fpr / IN, 4) + " in" : "";
+    $("h_cf").textContent = isFinite(S.fz)  ? "= " + (fin ? fmt(S.fz, 4) + " mm/tooth" : fmt(S.fz / IN, 5) + " in/tooth") : "";
+    $("h_cm").textContent = isFinite(S.mmm) ? "= " + (min ? fmt(S.mmm, 1) + " mm/min" : fmt(S.mmm / IN, 2) + " in/min") : "";
+  }
+  const typed = {
+    cd: v => { S.dmm = isIn("cdu") ? v * IN : v; },
+    cz: v => { S.z = v; },
+    cs: v => { S.smm = $("csu").value === "sfm" ? v / FT : v; S.sp = "smm"; },
+    cr: v => { S.rpm = v; S.sp = "rpm"; },
+    cf: v => { S.fz  = isIn("cfu") ? v * IN : v; S.fd = "fz"; },
+    cm: v => { S.mmm = isIn("cmu") ? v * IN : v; S.fd = "feed"; },
+  };
+  for (const id in typed) $(id).addEventListener("input", () => { typed[id](num(id)); solve(); show(id); });
+  // Changing a unit dropdown converts the value already in that box.
+  ["cdu","csu","cfu","cmu"].forEach(id => $(id).addEventListener("change", () => show(null)));
+  $("cz").value = S.z;
+
 
   // Quick reference
   const refs = {
@@ -217,7 +260,7 @@
   }
   document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => showRef(b.dataset.t));
 
-  calc(); showRef("speed");
+  solve(); show(null); showRef("speed");
 
   // PWA: register the service worker (only works when served over https or localhost)
   if ("serviceWorker" in navigator && location.protocol !== "file:") {

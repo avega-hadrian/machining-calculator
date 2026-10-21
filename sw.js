@@ -1,6 +1,6 @@
 // Service worker: saves the app on the device so it works offline.
 // When you change ANY file, bump VERSION (v1 -> v2, ...) so devices pick up the update.
-const VERSION = "v3";
+const VERSION = "v4";
 const CACHE = "machining-calc-" + VERSION;
 const FILES = [
   "./",
